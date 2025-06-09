@@ -17,41 +17,86 @@ const API_OPTIONS = {
 
 const App = ()=> {
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+
   const [errorMessage, setErrorMessage] = useState('');
-  const [MovieList, setMovieList]= useState([]);
+  const [trendingMovies, setTrendingMovies]= useState([]);
+
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
+
   const [IsLoading, setIsLoading] = useState(false);
   const [debounceSearchTerm, setDebouncedSearchTerm] = useState('');
 
   useDebounce(()=>setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
-  const fetchMovies = async (query='')=>{
-    setIsLoading(true);
-    setErrorMessage('');
-    try {
-      const endPoint = query ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}` : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
-      const response = await fetch(endPoint,API_OPTIONS);
-      if(!response.ok){
-        throw new Error('Failed to fetch movies');
+  useEffect(()=>{
+    const fetchTrending = async()=>{
+      setIsLoading(true);
+      setErrorMessage('');
+      try{
+        const response = await fetch(`${API_BASE_URL}/trending/movie/day?language=en-US`, API_OPTIONS);
+        if(!response.ok) throw new Error('Failed to fetch trending Movies');
+        const data = await response.json();
+        setTrendingMovies(data.results || []);
+      }catch(error){
+        console.error(error);
+        setErrorMessage('Failed to load trending movies');
+      }finally{
+        setIsLoading(false);
       }
-      const data = await response.json();
-      if(data.response==='False'){
-        setErrorMessage(data.Error || 'Failed to fetch movies');
-        setMovieList([]);
-        return;
-      }
-      setMovieList(data.results || []);
-    } catch (error) {
-      console.error(`Error fetching movies: ${error}`);  
-      setErrorMessage('Error fetching movies. Please try again later');  
-    }finally{
-      setIsLoading(false);
-
-    }
-  }
+    };
+    fetchTrending();
+  }, []);
 
   useEffect(()=>{
-    fetchMovies(searchTerm);
-  },[searchTerm]);
+  const fetchUpcoming = async()=>{
+    setIsLoading(true);
+    setErrorMessage('');
+    try{
+      const response = await fetch(`${API_BASE_URL}/movie/upcoming?language=en-US&page=1`, API_OPTIONS);
+      if(!response.ok) throw new Error('Failed to fetch Upcoming Movies');
+      const data = await response.json();
+      setTrendingMovies(data.results || []);
+    }catch(error){
+      console.error(error);
+      setErrorMessage('Failed to load Upcoming movies');
+    }finally{
+      setIsLoading(false);
+    }
+  };
+  fetchUpcoming();
+}, []);
+
+  useEffect(()=>{
+
+    if(!debounceSearchTerm){
+      setSearchResults([]);
+      setErrorMessage('');
+      return
+    }
+
+    const fetchSearch = async ()=>{
+      setIsLoading(true);
+      setErrorMessage('');
+      try {
+        
+        const response = await fetch(`${API_BASE_URL}/search/movie?query=${encodeURIComponent(debounceSearchTerm)}`,API_OPTIONS);
+        if(!response.ok){
+          throw new Error('Failed to search movies');
+        }
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } catch (error) {
+        console.error(`Error fetching movies: ${error}`);  
+        setErrorMessage('Error fetching movies. Please try again later');  
+      }finally{
+        setIsLoading(false);
+      }
+  }
+
+    fetchSearch();
+
+  },[debounceSearchTerm]);
 
   return (
     <main>
@@ -62,20 +107,40 @@ const App = ()=> {
           <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
-        <section className='all-movies'>
-          <h2 className='mt-[40px]'>All Movies</h2>
+
+        {debounceSearchTerm && (
+          <section className='all-movies'>
+            <h2 className='mt-[40px]'>Search Results for "{debounceSearchTerm}"</h2>
+            {IsLoading ? (
+              <Spinner />
+            ) : searchResults.length === 0 ? (
+              <p className='text-red-500'>{errorMessage}</p>
+            ) : (
+              <ul>
+                {searchResults.map(movie => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {!debounceSearchTerm && (<section className='all-movies'>
+          <h2 className='mt-[40px]'>Trending Movies</h2>
           {IsLoading ? (
             <Spinner />
           ) : errorMessage ? (
             <p className='text-red-500'>{errorMessage}</p>
           ) : (
             <ul>
-              {MovieList.map((movie)=>(
+              {trendingMovies.map((movie)=>(
+                <li key={movie.id} className="min-w-[200px]">
                 <MovieCard key={movie.id} movie={movie}/>
+                </li>
               ))}
             </ul>
           )}
-        </section>
+        </section>) }
       </div>
     </main>
   )
