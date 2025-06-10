@@ -16,6 +16,7 @@ const API_OPTIONS = {
 };
 
 const App = ()=> {
+  let index=1;
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
@@ -37,7 +38,8 @@ const App = ()=> {
         const response = await fetch(`${API_BASE_URL}/trending/movie/day?language=en-US`, API_OPTIONS);
         if(!response.ok) throw new Error('Failed to fetch trending Movies');
         const data = await response.json();
-        setTrendingMovies(data.results || []);
+        const tenResponses = (data.results || []).slice(0,10);
+        setTrendingMovies(tenResponses);
       }catch(error){
         console.error(error);
         setErrorMessage('Failed to load trending movies');
@@ -56,7 +58,7 @@ const App = ()=> {
       const response = await fetch(`${API_BASE_URL}/movie/upcoming?language=en-US&page=1`, API_OPTIONS);
       if(!response.ok) throw new Error('Failed to fetch Upcoming Movies');
       const data = await response.json();
-      setTrendingMovies(data.results || []);
+      setUpcomingMovies(data.results || []);
     }catch(error){
       console.error(error);
       setErrorMessage('Failed to load Upcoming movies');
@@ -125,8 +127,9 @@ const App = ()=> {
           </section>
         )}
 
-        {!debounceSearchTerm && (<section className='all-movies'>
-          <h2 className='mt-[40px]'>Trending Movies</h2>
+        {/* Trending Movies section */}
+        {!debounceSearchTerm && (<section className='trending'>
+          <h2>Trending Movies</h2>
           {IsLoading ? (
             <Spinner />
           ) : errorMessage ? (
@@ -134,13 +137,35 @@ const App = ()=> {
           ) : (
             <ul>
               {trendingMovies.map((movie)=>(
-                <li key={movie.id} className="min-w-[200px]">
-                <MovieCard key={movie.id} movie={movie}/>
+                <li key={movie.id} >
+                  <p>{index++}</p>
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={movie.title}
+                />
                 </li>
               ))}
             </ul>
           )}
         </section>) }
+
+
+        {!debounceSearchTerm && (
+        <section className='all-movies'>
+          <h2 className='mt-[40px]'>Upcoming Movies</h2>
+            {IsLoading ? (
+              <Spinner />
+            ) : errorMessage ? (
+              <p className='text-red-500'>{errorMessage}</p>
+            ) : (
+              <ul>
+                {upcomingMovies.map(movie => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </ul>
+            )}
+        </section>
+      )}
       </div>
     </main>
   )
