@@ -143,17 +143,41 @@ const App = ()=> {
                 ) : errorMessage ? (
                   <p className='text-red-500'>{errorMessage}</p>
                 ) : (
-                  <ul>
-                    {trendingMovies.map((movie)=>(
-                      <li key={movie.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/movie/${movie.id}`)}>
-                        <p>{index++}</p>
-                        <img
-                          src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                          alt={movie.title}
-                        />
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <button 
+                      className="nav-button left"
+                      onClick={() => {
+                        const container = document.querySelector('.trending ul');
+                        container.scrollBy({ left: -300, behavior: 'smooth' });
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                      </svg>
+                    </button>
+                    <ul>
+                      {trendingMovies.map((movie)=>(
+                        <li key={movie.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/movie/${movie.id}`)}>
+                          <p>{index++}</p>
+                          <img
+                            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                            alt={movie.title}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                    <button 
+                      className="nav-button right"
+                      onClick={() => {
+                        const container = document.querySelector('.trending ul');
+                        container.scrollBy({ left: 300, behavior: 'smooth' });
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </button>
+                  </>
                 )}
               </section>) }
 
