@@ -3,6 +3,8 @@ import Search from './components/Search';
 import Spinner from './components/Spinner';
 import MovieCard from './components/MovieCard';
 import { useDebounce } from 'react-use';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import MovieDetails from './components/MovieDetails';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -27,6 +29,8 @@ const App = ()=> {
 
   const [IsLoading, setIsLoading] = useState(false);
   const [debounceSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  const navigate = useNavigate();
 
   useDebounce(()=>setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
@@ -55,7 +59,8 @@ const App = ()=> {
     setIsLoading(true);
     setErrorMessage('');
     try{
-      const response = await fetch(`${API_BASE_URL}/movie/upcoming?language=en-US&page=1`, API_OPTIONS);
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`${API_BASE_URL}/discover/movie?primary_release_date.gte=${today}`, API_OPTIONS);
       if(!response.ok) throw new Error('Failed to fetch Upcoming Movies');
       const data = await response.json();
       setUpcomingMovies(data.results || []);
@@ -102,70 +107,78 @@ const App = ()=> {
 
   return (
     <main>
-      <div className='pattern'/>
       <div className='wrapper'>
-        <header>
-          <img src="./hero-img.png" alt="Hero Banner" />
-          <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
-          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        </header>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <header>
+                <img src="./hero-img.png" alt="Hero Banner" />
+                <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
+                <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+              </header>
 
-        {debounceSearchTerm && (
-          <section className='all-movies'>
-            <h2 className='mt-[40px]'>Search Results for "{debounceSearchTerm}"</h2>
-            {IsLoading ? (
-              <Spinner />
-            ) : searchResults.length === 0 ? (
-              <p className='text-red-500'>{errorMessage}</p>
-            ) : (
-              <ul>
-                {searchResults.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} />
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+              {/* Search Results section */}
+              {debounceSearchTerm && (
+                <section className='all-movies'>
+                  <h2 className='mt-[40px]'>Search Results for "{debounceSearchTerm}"</h2>
+                  {IsLoading ? (
+                    <Spinner />
+                  ) : searchResults.length === 0 ? (
+                    <p className='text-red-500'>{errorMessage}</p>
+                  ) : (
+                    <ul>
+                      {searchResults.map(movie => (
+                        <MovieCard key={movie.id} movie={movie} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
 
-        {/* Trending Movies section */}
-        {!debounceSearchTerm && (<section className='trending'>
-          <h2>Trending Movies</h2>
-          {IsLoading ? (
-            <Spinner />
-          ) : errorMessage ? (
-            <p className='text-red-500'>{errorMessage}</p>
-          ) : (
-            <ul>
-              {trendingMovies.map((movie)=>(
-                <li key={movie.id} >
-                  <p>{index++}</p>
-                <img
-                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  alt={movie.title}
-                />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>) }
+              {/* Trending Movies section */}
+              {!debounceSearchTerm && (<section className='trending'>
+                <h2>Trending Movies</h2>
+                {IsLoading ? (
+                  <Spinner />
+                ) : errorMessage ? (
+                  <p className='text-red-500'>{errorMessage}</p>
+                ) : (
+                  <ul>
+                    {trendingMovies.map((movie)=>(
+                      <li key={movie.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/movie/${movie.id}`)}>
+                        <p>{index++}</p>
+                        <img
+                          src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                          alt={movie.title}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>) }
 
-
-        {!debounceSearchTerm && (
-        <section className='all-movies'>
-          <h2 className='mt-[40px]'>Upcoming Movies</h2>
-            {IsLoading ? (
-              <Spinner />
-            ) : errorMessage ? (
-              <p className='text-red-500'>{errorMessage}</p>
-            ) : (
-              <ul>
-                {upcomingMovies.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} />
-                ))}
-              </ul>
-            )}
-        </section>
-      )}
+              {/* Upcoming Movies section */}
+              {!debounceSearchTerm && (
+                <section className='all-movies'>
+                  <h2 className='mt-[40px]'>Upcoming Movies</h2>
+                  {IsLoading ? (
+                    <Spinner />
+                  ) : errorMessage ? (
+                    <p className='text-red-500'>{errorMessage}</p>
+                  ) : (
+                    <ul>
+                      {upcomingMovies.map(movie => (
+                        <MovieCard key={movie.id} movie={movie} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+            </>
+          } />
+          
+          <Route path="/movie/:id" element={<MovieDetails />} />
+        </Routes>
       </div>
     </main>
   )
