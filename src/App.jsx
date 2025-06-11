@@ -5,6 +5,8 @@ import MovieCard from './components/MovieCard';
 import { useDebounce } from 'react-use';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import MovieDetails from './components/MovieDetails';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -29,6 +31,7 @@ const App = ()=> {
 
   const [IsLoading, setIsLoading] = useState(false);
   const [debounceSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigate = useNavigate();
 
@@ -111,7 +114,33 @@ const App = ()=> {
         <Routes>
           <Route path="/" element={
             <>
-              <header>
+              <header className="relative flex flex-col items-center">
+                <div className="absolute right-0 top-0 flex gap-5" style={{ marginTop: '0px' }}>
+                  {isLoggedIn ? (
+                    <button
+                      className="px-6 py-2 rounded-lg font-semibold text-black bg-white bg-opacity-80 hover:bg-opacity-100 transition transition-transform duration-200 hover:scale-105 hover:shadow-xl"
+                      onClick={() => setIsLoggedIn(false)}
+                    >
+                      Logout
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="px-6 py-2 rounded-lg font-semibold text-black bg-white bg-opacity-80 hover:bg-opacity-100 transition transition-transform duration-200 hover:scale-105 hover:shadow-xl"
+                        onClick={() => navigate('/login')}
+                      >
+                        Login
+                      </button>
+                      <button
+                        className="px-6 py-2 rounded-lg font-semibold text-black shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-xl"
+                        style={{ background: 'linear-gradient(90deg, #D6C7FF 0%, #AB8BFF 100%)' }}
+                        onClick={() => navigate('/signup')}
+                      >
+                        Sign Up
+                      </button>
+                    </>
+                  )}
+                </div>
                 <img src="./hero-img.png" alt="Hero Banner" />
                 <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy without the hassle</h1>
                 <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
@@ -202,6 +231,8 @@ const App = ()=> {
           } />
           
           <Route path="/movie/:id" element={<MovieDetails />} />
+          <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </div>
     </main>

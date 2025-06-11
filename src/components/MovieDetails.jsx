@@ -12,7 +12,6 @@ const API_OPTIONS = {
   },
 };
 
-// Add this style block for backdrop layering
 const style = `
 .movie-details-wrapper {
   position: relative;
@@ -140,7 +139,7 @@ const MovieDetails = () => {
                   today.setHours(0, 0, 0, 0);
                   const releaseDate = new Date(movie.release_date);
                   releaseDate.setHours(0, 0, 0, 0);
-                  return releaseDate <= today ? 'Released' : 'Release Date';
+                  return releaseDate <= today ? 'Released' : 'Release Date'; // this id if movie is released or not logic
                 })()
               ) : 'Release Date'}
             </h2>
@@ -169,7 +168,6 @@ const MovieDetails = () => {
                 ))}
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <h2 className="text-lg sm:text-xl font-semibold mb-2 text-[#A8B5DB]">Budget</h2>
