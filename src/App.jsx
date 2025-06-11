@@ -24,10 +24,13 @@ const App = ()=> {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  const [errorMessage, setErrorMessage] = useState('');
   const [trendingMovies, setTrendingMovies]= useState([]);
-
+  const [inTheaterMovies, setInTheaterMovies] = useState([]);
+  const [inTheaterPage, setInTheaterPage] = useState(1);
+  const [inTheaterTotalPages, setInTheaterTotalPages] = useState(1);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [upcomingTotalPages, setUpcomingTotalPages] = useState(1);
 
   const [IsLoading, setIsLoading] = useState(false);
   const [debounceSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -40,16 +43,14 @@ const App = ()=> {
   useEffect(()=>{
     const fetchTrending = async()=>{
       setIsLoading(true);
-      setErrorMessage('');
       try{
-        const response = await fetch(`${API_BASE_URL}/trending/movie/day?language=en-US`, API_OPTIONS);
+        const response = await fetch(`${API_BASE_URL}/trending/movie/day?language=en-US&region=IN`, API_OPTIONS);
         if(!response.ok) throw new Error('Failed to fetch trending Movies');
         const data = await response.json();
         const tenResponses = (data.results || []).slice(0,10);
         setTrendingMovies(tenResponses);
       }catch(error){
         console.error(error);
-        setErrorMessage('Failed to load trending movies');
       }finally{
         setIsLoading(false);
       }
@@ -58,36 +59,53 @@ const App = ()=> {
   }, []);
 
   useEffect(()=>{
+    const fetchInTheater = async()=>{
+      setIsLoading(true);
+      try{
+        const response = await fetch(`${API_BASE_URL}/movie/now_playing?language=en-US&page=${inTheaterPage}&region=IN`, API_OPTIONS);
+        if(!response.ok) throw new Error('Failed to fetch In Theater Movies');
+        const data = await response.json();
+        const eightResponses = (data.results || []).slice(0,8);
+        setInTheaterMovies(eightResponses);
+        setInTheaterTotalPages(data.total_pages || 1);
+      }catch(error){
+        console.error(error);
+      }finally{
+        setIsLoading(false);
+      }
+    };
+    fetchInTheater();
+  }, [inTheaterPage]);
+
+  useEffect(()=>{
   const fetchUpcoming = async()=>{
     setIsLoading(true);
-    setErrorMessage('');
     try{
       const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(`${API_BASE_URL}/discover/movie?primary_release_date.gte=${today}`, API_OPTIONS);
+      const response = await fetch(`${API_BASE_URL}/discover/movie?primary_release_date.gte=${today}&page=${upcomingPage}&region=IN`, API_OPTIONS);
       if(!response.ok) throw new Error('Failed to fetch Upcoming Movies');
       const data = await response.json();
-      setUpcomingMovies(data.results || []);
+      const eightResponses = (data.results || []).slice(0,8);
+      setUpcomingMovies(eightResponses);
+      setUpcomingTotalPages(data.total_pages || 1);
     }catch(error){
       console.error(error);
-      setErrorMessage('Failed to load Upcoming movies');
     }finally{
       setIsLoading(false);
     }
   };
   fetchUpcoming();
-}, []);
+}, [upcomingPage]);
 
   useEffect(()=>{
 
     if(!debounceSearchTerm){
       setSearchResults([]);
-      setErrorMessage('');
       return
     }
 
     const fetchSearch = async ()=>{
       setIsLoading(true);
-      setErrorMessage('');
       try {
         
         const response = await fetch(`${API_BASE_URL}/search/movie?query=${encodeURIComponent(debounceSearchTerm)}`,API_OPTIONS);
@@ -98,7 +116,6 @@ const App = ()=> {
         setSearchResults(data.results || []);
       } catch (error) {
         console.error(`Error fetching movies: ${error}`);  
-        setErrorMessage('Error fetching movies. Please try again later');  
       }finally{
         setIsLoading(false);
       }
@@ -153,7 +170,7 @@ const App = ()=> {
                   {IsLoading ? (
                     <Spinner />
                   ) : searchResults.length === 0 ? (
-                    <p className='text-red-500'>{errorMessage}</p>
+                    <p className='text-red-500'>Error loading movies</p>
                   ) : (
                     <ul>
                       {searchResults.map(movie => (
@@ -169,8 +186,6 @@ const App = ()=> {
                 <h2>Trending Movies</h2>
                 {IsLoading ? (
                   <Spinner />
-                ) : errorMessage ? (
-                  <p className='text-red-500'>{errorMessage}</p>
                 ) : (
                   <>
                     <button 
@@ -210,21 +225,79 @@ const App = ()=> {
                 )}
               </section>) }
 
+              {/* In Theater Movies section */}
+              {!debounceSearchTerm && (
+                <section className='all-movies'>
+                  <h2 className='mt-[40px]'>In Theater Now</h2>
+                  <>
+                    {IsLoading ? (
+                      <div className="flex justify-center py-8"><Spinner /></div>
+                    ) : (
+                      <>
+                        <ul>
+                          {inTheaterMovies.map(movie => (
+                            <MovieCard key={movie.id} movie={movie} />
+                          ))}
+                        </ul>
+                        {/* Pagination UI */}
+                        <div className="flex items-center justify-center mt-6 gap-10">
+                          <button
+                            className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40"
+                            onClick={() => setInTheaterPage(p => Math.max(1, p - 1))}
+                            disabled={inTheaterPage === 1}
+                          >
+                            <span style={{ color: '#b48cff', fontSize: 24 }}>&larr;</span>
+                          </button>
+                          <span className="text-gray-400 text-lg font-semibold">{inTheaterPage} / {inTheaterTotalPages}</span>
+                          <button
+                            className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40"
+                            onClick={() => setInTheaterPage(p => Math.min(inTheaterTotalPages, p + 1))}
+                            disabled={inTheaterPage === inTheaterTotalPages}
+                          >
+                            <span style={{ color: '#b48cff', fontSize: 24 }}>&rarr;</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                </section>
+              )}
+
               {/* Upcoming Movies section */}
               {!debounceSearchTerm && (
                 <section className='all-movies'>
                   <h2 className='mt-[40px]'>Upcoming Movies</h2>
-                  {IsLoading ? (
-                    <Spinner />
-                  ) : errorMessage ? (
-                    <p className='text-red-500'>{errorMessage}</p>
-                  ) : (
-                    <ul>
-                      {upcomingMovies.map(movie => (
-                        <MovieCard key={movie.id} movie={movie} />
-                      ))}
-                    </ul>
-                  )}
+                  <>
+                    {IsLoading ? (
+                      <div className="flex justify-center py-8"><Spinner /></div>
+                    ) : (
+                      <>
+                        <ul>
+                          {upcomingMovies.map(movie => (
+                            <MovieCard key={movie.id} movie={movie} />
+                          ))}
+                        </ul>
+                        {/* Pagination UI */}
+                        <div className="flex items-center justify-center mt-6 gap-10">
+                          <button
+                            className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40"
+                            onClick={() => setUpcomingPage(p => Math.max(1, p - 1))}
+                            disabled={upcomingPage === 1}
+                          >
+                            <span style={{ color: '#b48cff', fontSize: 24 }}>&larr;</span>
+                          </button>
+                          <span className="text-gray-400 text-lg font-semibold">{upcomingPage} / {upcomingTotalPages}</span>
+                          <button
+                            className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#1a1124] hover:bg-[#2a1a3a] transition disabled:opacity-40"
+                            onClick={() => setUpcomingPage(p => Math.min(upcomingTotalPages, p + 1))}
+                            disabled={upcomingPage === upcomingTotalPages}
+                          >
+                            <span style={{ color: '#b48cff', fontSize: 24 }}>&rarr;</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
                 </section>
               )}
             </>
